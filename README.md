@@ -1,46 +1,46 @@
 # m575-scroll
 
-A lightweight macOS command-line tool written in C that lets you customize the scroll wheel speed of a **Logitech M575** (or any HID-compatible mouse). It intercepts scroll events at the CoreGraphics level and multiplies them by a configurable factor, without needing any third-party driver.
+一款用 C 语言编写的轻量级 macOS 命令行工具，用于自定义 **Logitech M575**（或任何兼容 HID 的鼠标）的滚轮速度。它在 CoreGraphics 层面拦截滚动事件，并将其乘以可配置的倍数，无需任何第三方驱动。
 
-## Features
+## 功能特性
 
-- 🖱️ Real-time scroll speed adjustment (1.0×–10.0×)
-- 🔧 HID-level tuning via `hidutil` (disables acceleration, sets scaling)
-- 🔁 Optional **launchd** integration for automatic startup on login
-- 🛡️ Graceful signal handling (`SIGINT` / `SIGTERM`) for clean shutdown
-- 🧵 Thread-safe event tap using CoreGraphics + POSIX threads
+- 🖱️ 实时滚轮速度调整（1.0×–10.0×）
+- 🔧 通过 `hidutil` 进行 HID 级别调节（禁用加速度、设置缩放比例）
+- 🔁 可选的 **launchd** 集成，支持登录时自动启动
+- 🛡️ 优雅的信号处理（`SIGINT` / `SIGTERM`），确保干净退出
+- 🧵 基于 CoreGraphics + POSIX 线程的线程安全事件监听
 
-## Requirements
+## 系统要求
 
-| Requirement | Details                                                                                      |
-| ----------- | -------------------------------------------------------------------------------------------- |
-| OS          | macOS (any version with CoreGraphics)                                                        |
-| Compiler    | GCC or Clang with `-framework CoreGraphics`                                                  |
-| Permissions | **Accessibility** permission required (System Settings → Privacy & Security → Accessibility) |
-| Optional    | `sudo` recommended for full HID configuration access                                         |
+| 要求     | 说明                                                     |
+| -------- | -------------------------------------------------------- |
+| 操作系统 | macOS（任何支持 CoreGraphics 的版本）                    |
+| 编译器   | GCC 或 Clang，需支持 `-framework CoreGraphics`           |
+| 权限     | 需要**辅助功能**权限（系统设置 → 隐私与安全 → 辅助功能） |
+| 可选     | 建议使用 `sudo` 以获得完整的 HID 配置访问权限            |
 
-## Building
+## 构建
 
 ```bash
 make
 ```
 
-The compiled binary will be placed at `./m575-scroll`.
+编译后的二进制文件将输出到 `./m575-scroll`。
 
-### Install system-wide
+### 全局安装
 
 ```bash
 sudo make install
-# Installs to /usr/local/bin/m575-scroll
+# 安装至 /usr/local/bin/m575-scroll
 ```
 
-### Uninstall
+### 卸载
 
 ```bash
 sudo make uninstall
 ```
 
-## Usage
+## 使用说明
 
 ```
 用法：m575-scroll [命令] [选项]
@@ -55,94 +55,94 @@ sudo make uninstall
   help              显示帮助信息
 
 选项:
-  -s, --speed <倍数>    速度倍数 (1.0–10.0，默认：2.0)
+  -s, --speed <倍数>    速度倍数（1.0–10.0，默认：2.0）
   -d, --daemon          后台守护进程模式
   -h, --help            显示帮助
   -v, --version         显示版本
 ```
 
-### Examples
+### 示例
 
 ```bash
-# Start with default speed (2×)
+# 以默认速度（2×）启动
 sudo ./m575-scroll start
 
-# Start with 3× speed
+# 以 3× 速度启动
 sudo ./m575-scroll start -s 3.0
 
-# Start as a background daemon at 2.5×
+# 以 2.5× 速度在后台守护进程模式启动
 sudo ./m575-scroll start -s 2.5 -d
 
-# Check current status
+# 查看当前状态
 ./m575-scroll status
 
-# Stop the running process
+# 停止运行中的进程
 ./m575-scroll stop
 
-# Set up auto-start on login at 3× speed
+# 设置登录时以 3× 速度自动启动
 sudo ./m575-scroll install-launchd -s 3.0
 
-# Remove auto-start
+# 移除自动启动
 ./m575-scroll uninstall-launchd
 ```
 
-## Architecture
+## 项目架构
 
 ```
 m575-scroll
-├── main.c                 — CLI entry point, command dispatch
-├── scroll_interceptor.c   — CoreGraphics event tap (scroll multiplier)
-├── hid_config.c           — hidutil wrappers (acceleration, scaling)
-└── daemon.c               — PID file management, launchd plist creation
+├── main.c                 — CLI 入口，命令分发
+├── scroll_interceptor.c   — CoreGraphics 事件监听（滚动倍数处理）
+├── hid_config.c           — hidutil 封装（加速度、缩放比例）
+└── daemon.c               — PID 文件管理，launchd plist 生成
 ```
 
-### Component Overview
+### 模块说明
 
-| Module                 | Responsibility                                                                                                                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `main.c`               | Parses command-line arguments (`getopt_long`), dispatches to command handlers, manages the main run loop, handles `SIGINT`/`SIGTERM` for clean shutdown                              |
-| `scroll_interceptor.c` | Creates a `CGEventTap` on `kCGEventScrollWheel`, multiplies both vertical and horizontal scroll deltas by the configured factor, runs in a dedicated POSIX thread with a `CFRunLoop` |
-| `hid_config.c`         | Uses `hidutil property --set` to disable mouse acceleration (`UserAcceleration=0`) and set a base scaling value; resets on stop                                                      |
-| `daemon.c`             | Writes/reads a PID file in `/tmp/`, generates a launchd `.plist` in `~/Library/LaunchAgents/`, loads/unloads it via `launchctl`                                                      |
+| 模块                   | 职责                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `main.c`               | 使用 `getopt_long` 解析命令行参数，分发命令处理函数，管理主运行循环，处理 `SIGINT`/`SIGTERM` 信号以干净退出              |
+| `scroll_interceptor.c` | 在 `kCGEventScrollWheel` 上创建 `CGEventTap`，将垂直和水平滚动增量乘以配置倍数，运行在独立的 POSIX 线程和 `CFRunLoop` 中 |
+| `hid_config.c`         | 使用 `hidutil property --set` 禁用鼠标加速（`UserAcceleration=0`）并设置基础缩放值，停止时重置                           |
+| `daemon.c`             | 在 `/tmp/` 中写入/读取 PID 文件，在 `~/Library/LaunchAgents/` 中生成 launchd `.plist`，通过 `launchctl` 加载/卸载        |
 
-## launchd Auto-Start
+## launchd 开机自动启动
 
-`install-launchd` writes a property list to:
+`install-launchd` 命令会将配置文件写入：
 
 ```
 ~/Library/LaunchAgents/com.m575.scroll.plist
 ```
 
-The plist is configured with `RunAtLoad: true` and `KeepAlive: true`, so the daemon automatically starts on login and restarts if it crashes.
+plist 配置了 `RunAtLoad: true` 和 `KeepAlive: true`，因此守护进程会在登录时自动启动，崩溃后也会自动重启。
 
-To remove it completely:
+如需完全移除，执行：
 
 ```bash
 ./m575-scroll uninstall-launchd
 ```
 
-This unloads the job from `launchctl` and deletes the plist file.
+此命令会从 `launchctl` 中卸载任务并删除 plist 文件。
 
-## Permissions
+## 权限说明
 
-macOS requires **Accessibility** permission for `CGEventTap` to intercept input events. On first run you may see:
+macOS 要求应用具有**辅助功能**权限，`CGEventTap` 才能拦截输入事件。首次运行时可能会看到：
 
 ```
 创建事件监听失败，请检查辅助功能权限
 ```
 
-Go to **System Settings → Privacy & Security → Accessibility** and add your terminal or the `m575-scroll` binary to the allow list, then try again.
+请前往**系统设置 → 隐私与安全 → 辅助功能**，将终端或 `m575-scroll` 二进制文件添加到允许列表，然后重试。
 
-## Makefile Targets
+## Makefile 目标
 
-| Target              | Description                          |
+| 目标                | 说明                                 |
 | ------------------- | ------------------------------------ |
-| `make` / `make all` | Build the binary                     |
-| `make clean`        | Remove object files and binary       |
-| `make install`      | Copy binary to `/usr/local/bin/`     |
-| `make uninstall`    | Remove binary from `/usr/local/bin/` |
-| `make test`         | Build and run `m575-scroll status`   |
+| `make` / `make all` | 构建二进制文件                       |
+| `make clean`        | 删除目标文件和二进制文件             |
+| `make install`      | 将二进制文件复制到 `/usr/local/bin/` |
+| `make uninstall`    | 从 `/usr/local/bin/` 移除二进制文件  |
+| `make test`         | 构建并运行 `m575-scroll status`      |
 
-## License
+## 许可证
 
 MIT
