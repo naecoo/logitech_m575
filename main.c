@@ -202,6 +202,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (optind >= argc) {
+    fprintf(stderr, "错误：请指定一个命令\n\n");
+    print_usage(argv[0]);
+    return 1;
+  }
+
   const char *command = argv[optind];
 
   if (strcmp(command, "start") == 0) {
